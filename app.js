@@ -81,7 +81,7 @@ app.post('/create', (req, res) => {
     return res.sendStatus(200);
 });
 
-app.put('/edit', (req, res) => {
+app.patch('/edit', (req, res) => {
     const { id, username, password } = req.body;
     if(!id) return res.sendStatus(400);
     try {
