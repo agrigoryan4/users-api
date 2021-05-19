@@ -1,3 +1,9 @@
+const { 
+    ModelNoValidArgumentsException, 
+    ModelNotFoundException, 
+    ModelValidationErrorException 
+} = require('../exceptions/modelExceptions');
+
 class Model {
     constructor(dbCollection, schema) {
         this.collection = dbCollection;
@@ -13,7 +19,7 @@ class Model {
             }
             return true;
         });
-        if(!areFieldsValid) throw new Error('No valid data provided');
+        if(!areFieldsValid) throw new ModelValidationErrorException();
         fields.forEach(field => {
             const [ prop, val ] = field;
             this.schema[prop] = val;
@@ -23,9 +29,28 @@ class Model {
     save() {
         const schemaCopy = Object.assign({}, this.schema);
         this.collection.push(schemaCopy);
+        return schemaCopy;
+    }
+    findOne(queryObject) {
+        if(!queryObject || Object.entries(queryObject).length === 0) {
+            throw new ModelNoValidArgumentsException();
+        }
+        if(this.collection.length === 0) return null;
+        const queries = Object.entries(queryObject);
+        const foundElement = this.collection.find(document => {
+            const isMatch = queries.every(query => {
+                const [ prop, val ] = query;
+                try {
+                    if(document[prop] === val) return true;
+                } catch (error) {
+                    return false;
+                }
+            });
+            return isMatch;
+        });
+        return foundElement ? foundElement : null;
     }
     find(queryObject) {
-        console.log(queryObject)
         if(!queryObject || Object.entries(queryObject).length === 0) return this.collection;
         if(this.collection.length === 0) return [];
         const queries = Object.entries(queryObject);
@@ -43,23 +68,22 @@ class Model {
         return foundElements;
     }
     findByIdAndUpdate(id, updateObject) {
-        if(!id || !updateObject) throw new Error('No valid arguments provided');
+        if(!id || !updateObject) throw new ModelNoValidArgumentsException();
+        // check if the user exists
         const foundElement = this.collection.find(elem => elem.id === id);
-        if(!foundElement) throw new Error('No valid id provided');
-        try {
-            const updatedFields = Object.entries(updateObject);
-            if(updatedFields.length === 0) return foundElement;
-            updatedFields.forEach(field => {
-                const [ prop, val ] = field;
-                foundElement[prop] = val;
-            });
-        } catch (error) {
-            throw new Error(error);
-        }
+        if(!foundElement) throw new ModelNotFoundException();
+        // see which fields to update
+        const fieldsToUpdate = Object.entries(updateObject);
+        if(fieldsToUpdate.length === 0) return foundElement;
+        // update the corresponding fields
+        fieldsToUpdate.forEach(field => {
+            const [ prop, val ] = field;
+            foundElement[prop] = val;
+        });
         return foundElement;
     }
     findByIdAndDelete(id) {
-        if(!id) throw new Error('No arguments provided');
+        if(!id) throw new ModelNoValidArgumentsException();
         let elementFound = false;
         this.collection = this.collection.filter(elem => {
             if(elem.id === id) {
@@ -68,7 +92,7 @@ class Model {
             };
             return true;
         });
-        if(!elementFound) throw new Error('No valid id provided');
+        if(!elementFound) throw new ModelNotFoundException();
     }
 }
 

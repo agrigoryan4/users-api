@@ -1,63 +1,67 @@
+const { v4: uuidv4 } = require('uuid');
 const userModel = require('../db/user.model');
+const { 
+    UserAlreadyExistsException, 
+    UserNotFoundException 
+} = require('../exceptions/userExceptions');
 
 class UsersController {
-    static addUser(req, res) {
-        const { username, password } = req.body; 
-        if(!username || !password) return res.status(400);
+    static addUser(username, password) {
         if(userModel.find({ username }).length > 0) {
-            return res.status(409).json({ error: 'Username already exists' });
+            throw new UserAlreadyExistsException();
         }
-        try {
-            const newUser = userModel.build({ 
-                id: (Math.ceil(Math.random() * Math.pow(10, 6))).toString(), 
-                username, 
-                password 
-            });
-            newUser.save();
-            return res.sendStatus(200);
-        } catch (error) {
-            return res.sendStatus(500);
-        }
+        const user = userModel.build({ 
+            id: uuidv4(), 
+            username, 
+            password 
+        });
+        const newUser = user.save();
+        return newUser;
     }
-    static getUser(req, res) {
-        const { id } = req.params;
-        if(!id) {
-            const users = userModel.find({});
-            return res.status(200).json({ users: users });
-        }
-        try {
-            const user = userModel.find({ id: id });
-            if(user.length === 0) return res.sendStatus(404);
-            return res.status(200).json({ user: user });
-        } catch (error) {
-            return res.status(404).json({ error: error });
-        }
+    static getUsers() {
+        const users = userModel.find();
+        return users;
     }
-    static deleteUser(req, res) {
-        const { id } = req.body;
+    static getUser(id) {
+        const user = userModel.findOne({ id: id });
+        if(!user) {
+            throw new UserNotFoundException();
+        }
+        return user;
+    }
+    static deleteUser(id) {
         try {
             userModel.findByIdAndDelete(id);
-            return res.status(202).json({ message: 'User successfully deleted' });
         } catch (error) {
-            return res.status(404).json({ error: error });
+            if(error.status === 404) {
+                throw new UserNotFoundException();
+            }
+            else {
+                throw error;
+            };
         }
     }
-    static editUser(req, res) {
-        const { id, username, password } = req.body; 
-        if(!id) return res.status(400);
-        const user = userModel.find({ id });
-        if(!user) return res.status(404).json({ error: 'Invalid id' });
+    static editUser(id, username, password) {
         if(userModel.find({ username }).length !== 0) {
-            return res.status(409).json({ error: 'Already existing username'});
+            throw new UserAlreadyExistsException();
         }
         try {
             const updateObject = {};
-            if(username) updateObject.username = username;
-            if(password) updateObject.password = password;
-            userModel.findByIdAndUpdate(id, updateObject);
-            return res.status(200).json({ message: 'User successfully modified' });
+            if(username) {
+                updateObject.username = username;
+            }
+            if(password) {
+                updateObject.password = password;
+            }
+            const updatedUser = userModel.findByIdAndUpdate(id, updateObject);
+            return updatedUser;
         } catch (error) {
-            return res.status(500);
+            if(error.status === 404) {
+                throw new UserNotFoundException();
+            }
+            else {
+                throw error;
+            }
         }
     }
 }
