@@ -1,48 +1,52 @@
-const { v4: uuidv4 } = require('uuid');
-const userModel = require('../db/user.model');
+const User = require('../models/user');
+const {
+    Exception
+} = require('../exceptions/Exception');
 const { 
+    UserValidationException,
     UserAlreadyExistsException, 
     UserNotFoundException 
 } = require('../exceptions/userExceptions');
+const {
+    DatabaseException
+} = require('../exceptions/databaseExceptions');
 
 class UsersController {
-    static addUser(username, password) {
-        if(userModel.find({ username }).length > 0) {
+    static async addUser(username, password) {
+        if(await User.count({ where: { username: username } })) {
             throw new UserAlreadyExistsException();
         }
-        const user = userModel.build({ 
-            id: uuidv4(), 
+        const user = User.build({
             username, 
             password 
         });
-        const newUser = user.save();
+        const { dataValues: newUser } = await user.save();
         return newUser;
     }
-    static getUsers() {
-        const users = userModel.find();
+    static async getUsers() {
+        let users = await User.findAll();
+        users = users.map(user => user.dataValues);
         return users;
     }
-    static getUser(id) {
-        const user = userModel.findOne({ id: id });
+    static async getUser(id) {
+        const user = await User.findOne({ where: { id: id } });
         if(!user) {
             throw new UserNotFoundException();
         }
         return user;
     }
-    static deleteUser(id) {
+    static async deleteUser(id) {
         try {
-            userModel.findByIdAndDelete(id);
-        } catch (error) {
-            if(error.status === 404) {
+            const result = await User.destroy({ where: { id: id } });
+            if(!result) {
                 throw new UserNotFoundException();
             }
-            else {
-                throw error;
-            };
+        } catch (error) {
+            throw new UserException.getUserException(new DatabaseException(error));
         }
     }
-    static editUser(id, username, password) {
-        if(userModel.find({ username }).length !== 0) {
+    static async editUser(id, username, password) {
+        if(await User.count({ where: { username: username } })) {
             throw new UserAlreadyExistsException();
         }
         try {
@@ -53,15 +57,33 @@ class UsersController {
             if(password) {
                 updateObject.password = password;
             }
-            const updatedUser = userModel.findByIdAndUpdate(id, updateObject);
+            const result = await User.update(
+                updateObject, 
+                { 
+                    returning: true, 
+                    where: { id: id }
+                }
+            );
+            const { dataValues: updatedUser } = result[1][0];
             return updatedUser;
         } catch (error) {
-            if(error.status === 404) {
-                throw new UserNotFoundException();
-            }
-            else {
-                throw error;
-            }
+            throw new UserError.getUserException(new DatabaseException(error));
+        }
+    }
+}
+
+class UserException {
+    static getUserException(dbError) {
+        const { message, statusCode } = dbError;
+        if(statusCode === 'VALIDATION_ERROR') {
+            const exception = new UserValidationException();
+            exception.message = message;
+            exception.statusCode = statusCode;
+            return exception;
+        }
+        else {
+            const exception = new Exception(message, statusCode, 500);
+            return exception;
         }
     }
 }

@@ -4,35 +4,35 @@ const { HttpBadRequestException } = require('../exceptions/httpExceptions');
 
 const router = express.Router();
 
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         if(!id) {
             throw new HttpBadRequestException();
         }
-        const user = userCtrl.getUser(id);
+        const user = await userCtrl.getUser(id);
         res.respData.data = user;
         next();
     } catch (error) {
         next(error);
     }
 });
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
-        const users = userCtrl.getUsers();
+        const users = await userCtrl.getUsers();
         res.respData.data = users;
         next();
     } catch (error) {
         next(error);
     }
 });
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
     try {
         const { username, password } = req.body;
         if(!username || !password) {
             throw new HttpBadRequestException();
         }
-        const newUser = userCtrl.addUser(username, password);
+        const newUser = await userCtrl.addUser(username, password);
         res.respData.data = newUser;
         res.status(201);
         next()
@@ -40,22 +40,26 @@ router.post('/', (req, res, next) => {
         next(error);
     }
 });
-router.patch('/', (req, res, next) => {
+router.patch('/', async (req, res, next) => {
     try {
         const { id, username, password } = req.body;
-        if(!id) throw new HttpBadRequestException();
-        const editedUser = userCtrl.editUser(id, username, password);
+        if(!id) {
+            throw new HttpBadRequestException();
+        }
+        const editedUser = await userCtrl.editUser(id, username, password);
         res.respData.data = editedUser;
         next();
     } catch (error) {
         next(error);
     }
 });
-router.delete('/', (req, res, next) => {
+router.delete('/', async (req, res, next) => {
     try {
         const { id } = req.body;
-        if(!id) throw new HttpBadRequestException();
-        userCtrl.deleteUser(id);
+        if(!id) {
+            throw new HttpBadRequestException();
+        }
+        await userCtrl.deleteUser(id);
         res.status(202);
         next();
     } catch (error) {

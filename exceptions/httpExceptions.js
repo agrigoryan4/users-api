@@ -4,6 +4,6 @@ module.exports.HttpBadRequestException = class HttpBadRequestException extends E
     constructor() {
         let message = 'Bad request';
         let status = 400;
-        super(message, status);
+        super(message, null, status);
     }
 };
