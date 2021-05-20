@@ -5,7 +5,12 @@ const errorHandler = (err, req, res, next) => {
     if(!message || (!status && !statusCode)) {
         return res.sendStatus(500);
     } else {
-        return res.status(status || 500).json({ error: message, statusCode: statusCode });
+        return res.status(status || 500).json({
+            error: {
+                message,
+                statusCode
+            }
+        });
     }
 };
 

@@ -1,4 +1,6 @@
 const User = require('../models/user');
+const { Service, Helpers } = require('../services/users');
+const { BaseError: SequelizeError } = require('sequelize').Sequelize;
 const {
     Exception
 } = require('../exceptions/Exception');
@@ -13,61 +15,46 @@ const {
 
 class UsersController {
     static async addUser(username, password) {
-        if(await User.count({ where: { username: username } })) {
+        const userExists = await Helpers.doesUserExist({ username: username });
+        if(userExists) {
             throw new UserAlreadyExistsException();
         }
-        const user = User.build({
-            username, 
-            password 
-        });
-        const { dataValues: newUser } = await user.save();
+        const newUser = await Service.createUser(username, password);
         return newUser;
     }
     static async getUsers() {
-        let users = await User.findAll();
-        users = users.map(user => user.dataValues);
+        const users = await Service.getAllUsers();
         return users;
     }
     static async getUser(id) {
-        const user = await User.findOne({ where: { id: id } });
-        if(!user) {
-            throw new UserNotFoundException();
-        }
+        const user = await Service.getUserById(id);
         return user;
     }
     static async deleteUser(id) {
         try {
-            const result = await User.destroy({ where: { id: id } });
-            if(!result) {
-                throw new UserNotFoundException();
-            }
+            const result = await Service.deleteUserById(id);
         } catch (error) {
-            throw new UserException.getUserException(new DatabaseException(error));
+            if(error instanceof SequelizeError) {
+                throw new UserException.getUserException(new DatabaseException(error));
+            } else {
+                throw error;
+            };
         }
     }
     static async editUser(id, username, password) {
-        if(await User.count({ where: { username: username } })) {
+        const userExists = await Helpers.doesUserExist({ username: username });
+        if(userExists) {
             throw new UserAlreadyExistsException();
         }
         try {
-            const updateObject = {};
-            if(username) {
-                updateObject.username = username;
-            }
-            if(password) {
-                updateObject.password = password;
-            }
-            const result = await User.update(
-                updateObject, 
-                { 
-                    returning: true, 
-                    where: { id: id }
-                }
-            );
-            const { dataValues: updatedUser } = result[1][0];
+            const updatedUser = Service.updateUser(id, username, password);
             return updatedUser;
         } catch (error) {
-            throw new UserError.getUserException(new DatabaseException(error));
+            if(error instanceof SequelizeError) {
+                throw new UserException.getUserException(new DatabaseException(error));
+            } else {
+                throw error;
+            };
         }
     }
 }

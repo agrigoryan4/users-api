@@ -1,3 +1,5 @@
+require('dotenv').config();
+const { SERVER_HOST, SERVER_PORT } = process.env;
 const express = require('express');
 const morgan = require('morgan');
 // db
@@ -27,8 +29,8 @@ app.use(errorHandler);
 const run = async () => {
     await connectToDb();
     console.log('Connected to db');
-    app.listen(3000, 'localhost', () => {
-        console.log('Server listening');
+    app.listen(SERVER_PORT, SERVER_HOST, () => {
+        console.log(`Server listening on ${SERVER_HOST}:${SERVER_PORT}`);
     });
 }
 

@@ -1,9 +1,18 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('user-api', 'hp', '7777', {
+const {
+    DB_DATABASE,
+    DB_USER,
+    DB_PASSWORD,
+    DB_HOST,
+    DB_PORT
+} = process.env;
+
+
+const sequelize = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
     dialect: 'postgres',
-    host: 'localhost',
-    port: 5432
+    host: DB_HOST,
+    port: DB_PORT
 });
 
 const connect = async () => {
