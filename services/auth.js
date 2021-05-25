@@ -35,7 +35,6 @@ class Service {
         );
         return accessToken;
     }
-    
 }
 
 module.exports = Service;

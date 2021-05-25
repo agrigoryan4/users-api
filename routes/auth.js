@@ -2,13 +2,10 @@ const express = require('express');
 const { auth: authCtrl } = require('../controllers');
 // exceptions
 const { 
-    BadRequestException, ValidationException
+    BadRequestException
 } = require('../utils/exceptions/UserFacingExceptions');
 const userValidation = require('../utils/validation/userValidation');
 const transformJoiException = require('../utils/exceptions/transformJoiException');
-// middleware
-const auth = require('../middleware/auth');
-
 
 const router = express.Router();
 
