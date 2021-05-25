@@ -5,6 +5,7 @@ const {
 } = require('../utils/exceptions/UserFacingExceptions');
 const transformJwtException = require('../utils/exceptions/transformJwtException');
 
+
 const auth = async (req, res, next) => {
     const authHeader = req.header('Authorization');
     if(!authHeader) {

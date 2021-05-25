@@ -101,11 +101,10 @@ class Service {
             if(result[0] === 0) {
                 throw new NotFoundException('Unable to edit user with the given id.');
             }
-            const user = await User
-                .findOne({ 
-                    attributes: { exclude: ['password'] }, 
-                    where: { id: id } 
-                });
+            const user = await User.findOne({ 
+                attributes: { exclude: ['password'] }, 
+                where: { id: id } 
+            });
             const { dataValues: updatedUser } = user;
             return updatedUser;
         } catch (error) {
