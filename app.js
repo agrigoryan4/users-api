@@ -8,7 +8,7 @@ const { connect: connectToDb } = require('./models/database');
 const errorHandler = require('./middleware/errorHandler');
 const responseHandler = require('./middleware/responseHandler');
 // routes
-const usersRouter = require('./routes/users');
+const { authRouter, usersRouter } = require('./routes/');
 
 const app = express();
 app.use(morgan('dev'));
@@ -21,6 +21,7 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use('/auth', authRouter);
 app.use('/users', usersRouter);
 
 app.use(responseHandler);
