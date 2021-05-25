@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const { sequelize } = require('../models/database');
 const bcrypt = require('bcrypt');
 // exceptions
 const transformSequelizeException = require('../utils/exceptions/transformSequelizeException');

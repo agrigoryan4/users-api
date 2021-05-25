@@ -11,7 +11,6 @@ const responseHandler = require('./middleware/responseHandler');
 const { authRouter, usersRouter } = require('./routes/');
 
 
-
 const app = express();
 app.use(morgan('dev'));
 app.use(express.json());

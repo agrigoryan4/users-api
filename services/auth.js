@@ -6,6 +6,11 @@ const {
 const UsersService = require('./users');
 
 class Service {
+    static async login(username, password) {
+        const user = Service.authenticate(username, password);
+        const token = Service.generateTokenById(user.id);
+        return token;
+    }
     static async authenticate(username, password) {
         const user = await UsersService.getUserByUsername(username);
         if(!user) {
