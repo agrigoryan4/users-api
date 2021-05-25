@@ -20,7 +20,7 @@ module.exports.BadRequestException = class BadRequestException extends UserFacin
 
 module.exports.ValidationException = class ValidationException extends UserFacingException {
     constructor(message) {
-        super(message, 'Validation Error', 403);
+        super(message, 'Validation Error', 400);
     }
 }
 

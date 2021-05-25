@@ -5,6 +5,7 @@ const {
     BadRequestException, ValidationException
 } = require('../utils/exceptions/UserFacingExceptions');
 const userValidation = require('../utils/validation/userValidation');
+const transformJoiException = require('../utils/exceptions/transformJoiException');
 // middleware
 const auth = require('../middleware/auth');
 
@@ -22,7 +23,7 @@ router.post('/', async (req, res, next) => {
             password: password
         });
         if(error) {
-            throw new ValidationException();
+            transformJoiException(error);
         }
         const accessToken = await authCtrl.getAccessToken(username, password);
         res.respData.data = {
