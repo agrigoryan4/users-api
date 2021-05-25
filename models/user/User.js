@@ -1,5 +1,6 @@
 const { DataTypes, Model } = require('sequelize');
 const { sequelize } = require('../database');
+const joiUserValidation = require('../../utils/validation/userValidation');
 
 class User extends Model {}
 
@@ -8,12 +9,32 @@ User.init({
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         allowNull: false,
-        primaryKey: true
+        primaryKey: true,
+        validate: {
+            isId(value) {
+                const { error, result } = joiUserValidation.validate({
+                    id: value
+                });
+                if(error) {
+                    throw error;
+                }
+            }
+        }
     },
     username: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        unique: true,
+        validate: {
+            isUsername(value) {
+                const { error, result } = joiUserValidation.validate({
+                    username: value
+                });
+                if(error) {
+                    throw error;
+                }
+            }
+        }
     },
     password: {
         type: DataTypes.STRING,
