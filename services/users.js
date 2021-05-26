@@ -1,114 +1,114 @@
 const { sequelize } = require('../models/database');
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 // exceptions
 const transformSequelizeException = require('../utils/exceptions/transformSequelizeException');
 const {
-    NotFoundException
+    NotFoundException, BadRequestException
 } = require('../utils/exceptions/UserFacingExceptions');
 
 class Service {
     static async createUser(username, password) {
+        const returningColumns = ['id', 'username', 'createdAt', 'updatedAt'];
+        let insertColumns;
+        let insertValues;
         const encryptedPassword = await bcrypt.hash(password, 12);
-        const user = User.build({
-            username, 
-            password: encryptedPassword
-        });
+        const id = uuidv4();
+        const createdAt = (new Date()).toISOString();
+        const updatedAt = createdAt;
+        insertColumns = ['id', 'username', 'password', 'createdAt', 'updatedAt'];
+        insertValues = [id, username, encryptedPassword, createdAt, updatedAt];
         try {
-            await user.save({
-                returning: false
-            });
-            const newUser = await User.findOne({
-                where: {
-                    username: username
-                },
-                attributes: {
-                    exclude: ['password']
-                }
-            });
-            return newUser;
+            const [ results, metadata ] = await sequelize.query(`
+                INSERT INTO "Users" (${insertColumns.map(column => `"${column}"`).join(', ')})
+                VALUES (${insertValues.map(val => `'${val}'`).join(', ')})
+                RETURNING ${returningColumns.map(column => `"${column}"`).join(', ')}
+            `);
+            const user = results[0];
+            return user;
         } catch (error) {
             transformSequelizeException(error, 'Unable to create user');
         }
     }
     static async getAllUsers() {
-        let users = await User
-            .findAll({
-                attributes: { exclude: ['password'] }
-            });
-        users = users.map(user => user.dataValues);
+        const columns = ['id', 'username', 'createdAt', 'updatedAt'];
+        const [ results, metadata ] = await sequelize.query(`
+            SELECT ${columns.map(column => `"${column}"`).join(', ')} FROM "Users"
+        `);
+        const users = results;
         return users;
     }
-    static async getUserPassword(id, username) {
-        let where = {};
-        if(id) {
-            where.id = id;
-        } else if(username) {
-            where.username = username;
-        } else {
-            return null
-        };
-        const user = await User
-            .findOne({
-                attributes: ['password'],
-                where: where
-            });
-        const hashedPassword = user.dataValues.password ? user.dataValues.password : null;
+    static async getUserPassword(id) {
+        const [ results, metadata ] = await sequelize.query(`
+            SELECT ("password") FROM "Users"
+            WHERE "id" = '${id}'
+        `);
+        const hashedPassword = results[0].password;
         return hashedPassword;
     }
     static async getUserByUsername(username) {
-        const user = await User
-            .findOne({ 
-                attributes: { exclude: ['password'] }, 
-                where: { username: username } 
-            });
-        return user?.dataValues ? user.dataValues : null;
+        const columns = ['id', 'username', 'createdAt', 'updatedAt'];
+        const [ results, metadata ] = await sequelize.query(`
+            SELECT ${columns.map(column => `"${column}"`).join(', ')} FROM "Users"
+            WHERE username = '${username}'
+        `);
+        const user = results.length !== 0 ? results[0] : null;
+        return user;
     }
     static async getUserById(id) {
-        const user = await User
-            .findOne({
-                attributes: { exclude: ['password'] }, 
-                where: { id: id } 
-            });
-        return user?.dataValues ? user.dataValues : null;
+        const columns = ['id', 'username', 'createdAt', 'updatedAt'];
+        const [ results, metadata ] = await sequelize.query(`
+            SELECT ${columns.map(column => `"${column}"`).join(', ')} FROM "Users" 
+            WHERE id = '${id}'
+        `);
+        const user = results.length !== 0 ? results[0] : null;
+        return user;
     }
     static async deleteUserById(id) {
         try {
-            const result = await User.destroy({ where: { id: id } });
-            if(!result) {
-                throw new NotFoundException('Unable to delete user. Id not found.');
-            }
+            const [ results, metadata ] = await sequelize.query(`
+                DELETE FROM "Users"
+                WHERE id = '${id}'
+            `);
         } catch (error) {
             transformSequelizeException(error);
         }
     }
     static async updateUser(id, username, password) {
-        const updateObject = {};
+        const returningColumns = ['id', 'username', 'createdAt', 'updatedAt'];
+        const columnsToUpdate = [];
+        if(!username && !password) {
+            throw new BadRequestException('No attributes specified to update');
+        }
         if(username) {
-            updateObject.username = username;
+            columnsToUpdate.push(['username', username]);
         }
         if(password) {
             const newEncryptedPassword = await bcrypt.hash(password, 12);
-            updateObject.password = newEncryptedPassword;
+            columnsToUpdate.push(['password', newEncryptedPassword]);
         }
         try {
-            const result = await User.update(
-                updateObject, 
-                {
-                    returning: false,
-                    where: { id: id }
-                }
-            );
-            if(result[0] === 0) {
-                throw new NotFoundException('Unable to edit user with the given id.');
-            }
-            const user = await User.findOne({ 
-                attributes: { exclude: ['password'] }, 
-                where: { id: id } 
-            });
-            const { dataValues: updatedUser } = user;
-            return updatedUser;
+            const [ results, metadata ] = await sequelize.query(`
+                UPDATE "Users"
+                SET 
+                    ${(() => {
+                        let setStatements = '';
+                        columnsToUpdate.forEach((column, index) => {
+                            if(index === 0) {
+                                setStatements += `"${column[0]}" = '${column[1]}'`;
+                            } else {
+                                setStatements += `, "${column[0]}" = '${column[1]}'`;
+                            }
+                        });
+                        return setStatements;
+                    })()}
+                WHERE id = '${id}'
+                RETURNING ${returningColumns.map(column => `"${column}"`).join(', ')}
+            `);
+            const user = results[0];
+            return user;
         } catch (error) {
-            transformSequelizeException(error, 'Unable to edit user');
+            transformSequelizeException(error);
         }
     }
 }
