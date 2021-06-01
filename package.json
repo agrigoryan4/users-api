@@ -5,7 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "bcrypt": "^5.0.1",
-    "dotenv": "^9.0.2",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
@@ -14,9 +14,14 @@
     "pg": "^8.6.0",
     "sequelize": "^6.6.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^7.27.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.4"
+  },
   "scripts": {
-    "start": "nodemon app.js",
+    "lint": "./node_modules/.bin/eslint",
+    "start": "nodemon -r dotenv/config app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
