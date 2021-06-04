@@ -27,11 +27,11 @@ app.use(responseHandler);
 app.use(errorHandler);
 
 const run = async () => {
-  await sequelize.authenticate();
-  await sequelize.sync();
-  console.log('Connected to db');
-  app.listen(serverPort, serverHost, () => {
+  app.listen(serverPort, serverHost, async () => {
     console.log(`Server listening on ${serverHost}:${serverPort}`);
+    await sequelize.authenticate();
+    await sequelize.sync();
+    console.log('Connected to db');
   });
 };
 

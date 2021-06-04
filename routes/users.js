@@ -91,7 +91,7 @@ router.delete('/', auth, async (req, res, next) => {
       throw new BadRequestException();
     }
     if (req.user.id !== id) {
-      throw new ForbiddenException();
+      // throw new ForbiddenException();
     }
     const { error } = userValidation.validate({
       id,

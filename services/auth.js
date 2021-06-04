@@ -6,13 +6,13 @@ const {
 const UsersService = require('./users');
 
 class Service {
-  static async login(username, password) {
-    const user = await Service.authenticate(username, password);
+  static async login({ username, password }) {
+    const user = await Service.authenticate({ username, password });
     const token = await Service.generateTokenById(user.id);
     return token;
   }
 
-  static async authenticate(username, password) {
+  static async authenticate({ username, password }) {
     const user = await UsersService.getUserByUsername(username);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

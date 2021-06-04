@@ -6,11 +6,11 @@ module.exports = {
       'Users',
       'avatar',
       {
-        type: Sequelize.STRING
-      }
-    )
+        type: Sequelize.STRING,
+      },
+    );
   },
   down: async (queryInterface, Sequelize) => {
     return queryInterface.removeColumns('Users', 'avatar');
-  }
+  },
 };

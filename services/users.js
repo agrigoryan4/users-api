@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { User } = require('../models').sequelize.models;
+const { sequelize: { models: { User } } } = require('../models');
 // exceptions
 const transformSequelizeException = require('../utils/exceptions/transformSequelizeException');
 const {
@@ -36,7 +36,6 @@ class Service {
       .findAll({
         attributes: { exclude: ['password'] },
       });
-    users = users.map((user) => user.dataValues);
     return users;
   }
 
@@ -55,7 +54,7 @@ class Service {
         attributes: ['password'],
         where,
       });
-    const hashedPassword = user.dataValues.password ? user.dataValues.password : null;
+    const hashedPassword = user?.password || null;
     return hashedPassword;
   }
 
@@ -65,7 +64,7 @@ class Service {
         attributes: { exclude: ['password'] },
         where: { username },
       });
-    return user?.dataValues ? user.dataValues : null;
+    return user || null;
   }
 
   static async getUserById(id) {
@@ -74,7 +73,7 @@ class Service {
         attributes: { exclude: ['password'] },
         where: { id },
       });
-    return user?.dataValues ? user.dataValues : null;
+    return user || null;
   }
 
   static async deleteUserById(id) {
@@ -108,11 +107,10 @@ class Service {
       if (result[0] === 0) {
         throw new NotFoundException('Unable to edit user with the given id.');
       }
-      const user = await User.findOne({
+      const updatedUser = await User.findOne({
         attributes: { exclude: ['password'] },
         where: { id },
       });
-      const { dataValues: updatedUser } = user;
       return updatedUser;
     } catch (error) {
       transformSequelizeException(error, 'Unable to edit user');
