@@ -88,14 +88,10 @@ class Service {
     }
   }
 
-  static async updateUser(id, username, password) {
+  static async updateUser(id, { username }) {
     const updateObject = {};
     if (username) {
       updateObject.username = username;
-    }
-    if (password) {
-      const newEncryptedPassword = await bcrypt.hash(password, 12);
-      updateObject.password = newEncryptedPassword;
     }
     try {
       const result = await User.update(
@@ -108,12 +104,6 @@ class Service {
       if (result[0] === 0) {
         throw new NotFoundException('Unable to edit user with the given id.');
       }
-      const user = await User.findOne({
-        attributes: { exclude: ['password'] },
-        where: { id },
-      });
-      const { dataValues: updatedUser } = user;
-      return updatedUser;
     } catch (error) {
       transformSequelizeException(error, 'Unable to edit user');
     }

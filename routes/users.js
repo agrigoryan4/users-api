@@ -62,7 +62,7 @@ router.post('/', async (req, res, next) => {
 });
 router.patch('/', auth, async (req, res, next) => {
   try {
-    const { id, username, password } = req.body;
+    const { id, username } = req.body;
     if (!id) {
       throw new BadRequestException();
     }
@@ -71,14 +71,12 @@ router.patch('/', auth, async (req, res, next) => {
     }
     const { error } = userValidation.validate({
       id,
-      username,
-      password,
+      username
     });
     if (error) {
       transformJoiException(error, 'Unable to edit user');
     }
-    const editedUser = await userCtrl.editUser(id, username, password);
-    res.respData.data = editedUser;
+    await userCtrl.editUser(id, { username });
     next();
   } catch (error) {
     next(error);

@@ -21,9 +21,8 @@ class UsersController {
     return result;
   }
 
-  static async editUser(id, username, password) {
-    const updatedUser = UsersService.updateUser(id, username, password);
-    return updatedUser;
+  static async editUser(id, { username }) {
+    await UsersService.updateUser(id, { username });
   }
 }
 
