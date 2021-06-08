@@ -30,8 +30,9 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 router.get('/', async (req, res, next) => {
+  const { page, limit } = req.query;
   try {
-    const users = await userCtrl.getUsers();
+    const users = await userCtrl.getUsers({ pagination: { page, limit }});
     res.respData.data = users;
     next();
   } catch (error) {

@@ -6,8 +6,8 @@ class UsersController {
     return newUser;
   }
 
-  static async getUsers() {
-    const users = await UsersService.getAllUsers();
+  static async getUsers({ pagination }) {
+    const users = await UsersService.getAllUsers(pagination);
     return users;
   }
 
