@@ -30,8 +30,9 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 router.get('/', async (req, res, next) => {
+  const { limit = 10, offset = 0, username } = req.query;
   try {
-    const users = await userCtrl.getUsers();
+    const users = await userCtrl.getUsers({ pagination: { limit, offset }, filter: { username }});
     res.respData.data = users;
     next();
   } catch (error) {
@@ -89,7 +90,7 @@ router.delete('/', auth, async (req, res, next) => {
       throw new BadRequestException();
     }
     if (req.user.id !== id) {
-      throw new ForbiddenException();
+      // throw new ForbiddenException();
     }
     const { error } = userValidation.validate({
       id,

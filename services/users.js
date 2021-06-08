@@ -1,5 +1,6 @@
-const bcrypt = require('bcrypt');
-const { User } = require('../models').sequelize.models;
+const bcrypt = require('bcrypt')
+const { sequelize } = require('../models');
+const { sequelize: { models: { User } } } = require('../models');
 // exceptions
 const transformSequelizeException = require('../utils/exceptions/transformSequelizeException');
 const {
@@ -31,13 +32,25 @@ class Service {
     }
   }
 
-  static async getAllUsers() {
-    let users = await User
-      .findAll({
-        attributes: { exclude: ['password'] },
-      });
-    users = users.map((user) => user.dataValues);
-    return users;
+  static async getAllUsers({ limit, offset }, { username }) {
+    let [ users ] = await sequelize.query(`
+      SELECT "id", "username", "createdAt", "updatedAt"
+      FROM "Users"
+      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
+      ORDER BY "username" ASC
+      ${ limit !== null && offset !== null ? (
+          `LIMIT ${limit} OFFSET ${offset}`
+      ) : '' }
+    `);
+    let [ usersCount ] = await sequelize.query(`
+      SELECT COUNT("id")
+      FROM "Users"
+      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
+    `);
+    return {
+      rows: users,
+      count: usersCount[0].count
+    };
   }
 
   static async getUserPassword(id, username) {
@@ -88,10 +101,14 @@ class Service {
     }
   }
 
-  static async updateUser(id, { username }) {
+  static async updateUser(id, username, password) {
     const updateObject = {};
     if (username) {
       updateObject.username = username;
+    }
+    if (password) {
+      const newEncryptedPassword = await bcrypt.hash(password, 12);
+      updateObject.password = newEncryptedPassword;
     }
     try {
       const result = await User.update(
@@ -104,6 +121,12 @@ class Service {
       if (result[0] === 0) {
         throw new NotFoundException('Unable to edit user with the given id.');
       }
+      const user = await User.findOne({
+        attributes: { exclude: ['password'] },
+        where: { id },
+      });
+      const { dataValues: updatedUser } = user;
+      return updatedUser;
     } catch (error) {
       transformSequelizeException(error, 'Unable to edit user');
     }
