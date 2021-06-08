@@ -32,20 +32,20 @@ class Service {
     }
   }
 
-  static async getAllUsers({ page, limit }, { nameLike }) {
+  static async getAllUsers({ limit, offset }, { username }) {
     let [ users ] = await sequelize.query(`
       SELECT "id", "username", "createdAt", "updatedAt"
       FROM "Users"
-      ${nameLike ? `WHERE "username" LIKE '%${nameLike}%'` : null }
+      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
       ORDER BY "username" ASC
-      ${ page && limit ? (
-          `LIMIT ${limit} OFFSET ${page-1}`
-      ) : null }
+      ${ limit !== null && offset !== null ? (
+          `LIMIT ${limit} OFFSET ${offset}`
+      ) : '' }
     `);
     let [ usersCount ] = await sequelize.query(`
       SELECT COUNT("id")
       FROM "Users"
-      ${nameLike ? `WHERE "username" LIKE '%${nameLike}%'` : null }
+      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
     `);
     return {
       rows: users,

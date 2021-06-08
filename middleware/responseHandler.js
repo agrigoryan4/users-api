@@ -6,12 +6,12 @@ const responseHandler = (req, res, next) => {
     data: null,
   };
   if(data?.count && !isNaN(data.count)) {
-    const { page, limit } = req.query;
+    const { limit, offset } = req.query;
     response.data = data.rows;
     response._meta.pagination = {
       total: data.count,
       limit,
-      offset: (page-1) * limit,
+      offset,
     };
   } else {
     response.data = data;
