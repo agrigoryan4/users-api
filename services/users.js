@@ -1,4 +1,5 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt')
+const { sequelize } = require('../models');
 const { sequelize: { models: { User } } } = require('../models');
 // exceptions
 const transformSequelizeException = require('../utils/exceptions/transformSequelizeException');
@@ -31,12 +32,22 @@ class Service {
     }
   }
 
-  static async getAllUsers() {
-    let users = await User
-      .findAll({
-        attributes: { exclude: ['password'] },
-      });
-    return users;
+  static async getAllUsers({ page, limit }) {
+    let [ users ] = await sequelize.query(`
+      SELECT "id", "username", "createdAt", "updatedAt"
+      FROM "Users"
+      ${ page && limit ? (
+          `LIMIT ${limit} OFFSET ${page-1}`
+      ) : null }
+    `);
+    let [ usersCount ] = await sequelize.query(`
+      SELECT COUNT("id")
+      FROM "Users"
+    `);
+    return {
+      rows: users,
+      count: usersCount[0].count
+    };
   }
 
   static async getUserPassword(id, username) {
@@ -54,7 +65,7 @@ class Service {
         attributes: ['password'],
         where,
       });
-    const hashedPassword = user?.password || null;
+    const hashedPassword = user.dataValues.password ? user.dataValues.password : null;
     return hashedPassword;
   }
 
@@ -64,7 +75,7 @@ class Service {
         attributes: { exclude: ['password'] },
         where: { username },
       });
-    return user || null;
+    return user?.dataValues ? user.dataValues : null;
   }
 
   static async getUserById(id) {
@@ -73,7 +84,7 @@ class Service {
         attributes: { exclude: ['password'] },
         where: { id },
       });
-    return user || null;
+    return user?.dataValues ? user.dataValues : null;
   }
 
   static async deleteUserById(id) {
@@ -107,10 +118,11 @@ class Service {
       if (result[0] === 0) {
         throw new NotFoundException('Unable to edit user with the given id.');
       }
-      const updatedUser = await User.findOne({
+      const user = await User.findOne({
         attributes: { exclude: ['password'] },
         where: { id },
       });
+      const { dataValues: updatedUser } = user;
       return updatedUser;
     } catch (error) {
       transformSequelizeException(error, 'Unable to edit user');

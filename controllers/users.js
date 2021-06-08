@@ -6,8 +6,8 @@ class UsersController {
     return newUser;
   }
 
-  static async getUsers() {
-    const users = await UsersService.getAllUsers();
+  static async getUsers({ pagination }) {
+    const users = await UsersService.getAllUsers(pagination);
     return users;
   }
 
@@ -21,9 +21,8 @@ class UsersController {
     return result;
   }
 
-  static async editUser(id, username, password) {
-    const updatedUser = UsersService.updateUser(id, username, password);
-    return updatedUser;
+  static async editUser(id, { username }) {
+    await UsersService.updateUser(id, { username });
   }
 }
 
