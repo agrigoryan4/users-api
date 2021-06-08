@@ -30,9 +30,8 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 router.get('/', async (req, res, next) => {
-  const { limit = 10, offset = 0, username } = req.query;
   try {
-    const users = await userCtrl.getUsers({ pagination: { limit, offset }, filter: { username }});
+    const users = await userCtrl.getUsers();
     res.respData.data = users;
     next();
   } catch (error) {
@@ -63,7 +62,7 @@ router.post('/', async (req, res, next) => {
 });
 router.patch('/', auth, async (req, res, next) => {
   try {
-    const { id, username } = req.body;
+    const { id, username, password } = req.body;
     if (!id) {
       throw new BadRequestException();
     }
@@ -72,12 +71,14 @@ router.patch('/', auth, async (req, res, next) => {
     }
     const { error } = userValidation.validate({
       id,
-      username
+      username,
+      password,
     });
     if (error) {
       transformJoiException(error, 'Unable to edit user');
     }
-    await userCtrl.editUser(id, { username });
+    const editedUser = await userCtrl.editUser(id, username, password);
+    res.respData.data = editedUser;
     next();
   } catch (error) {
     next(error);
