@@ -1,8 +1,8 @@
 const { users: UsersService } = require('../services');
 
 class UsersController {
-  static async addUser(username, password) {
-    const newUser = await UsersService.createUser(username, password);
+  static async addUser({ username, password }) {
+    const newUser = await UsersService.createUser({ username, password });
     return newUser;
   }
 
@@ -22,7 +22,8 @@ class UsersController {
   }
 
   static async editUser(id, { username }) {
-    await UsersService.updateUser(id, { username });
+    const result = await UsersService.updateUser(id, { username });
+    return result;
   }
 }
 

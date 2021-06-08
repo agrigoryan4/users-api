@@ -8,7 +8,7 @@ const {
 } = require('../utils/exceptions/userFacingExceptions');
 
 class Service {
-  static async createUser(username, password) {
+  static async createUser({ username, password }) {
     const encryptedPassword = await bcrypt.hash(password, 12);
     const user = User.build({
       username,
@@ -33,6 +33,15 @@ class Service {
   }
 
   static async getAllUsers({ limit, offset }, { username }) {
+    console.log(`
+    SELECT "id", "username", "createdAt", "updatedAt"
+      FROM "Users"
+      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
+      ORDER BY "username" ASC
+      ${ limit !== null && offset !== null ? (
+        `LIMIT ${limit} OFFSET ${offset}`
+    ) : '' }
+    `)
     let [ users ] = await sequelize.query(`
       SELECT "id", "username", "createdAt", "updatedAt"
       FROM "Users"
@@ -68,7 +77,7 @@ class Service {
         attributes: ['password'],
         where,
       });
-    const hashedPassword = user.dataValues.password ? user.dataValues.password : null;
+    const hashedPassword = user?.password || null;
     return hashedPassword;
   }
 
@@ -78,7 +87,7 @@ class Service {
         attributes: { exclude: ['password'] },
         where: { username },
       });
-    return user?.dataValues ? user.dataValues : null;
+    return user || null;
   }
 
   static async getUserById(id) {
@@ -87,7 +96,7 @@ class Service {
         attributes: { exclude: ['password'] },
         where: { id },
       });
-    return user?.dataValues ? user.dataValues : null;
+    return user || null;
   }
 
   static async deleteUserById(id) {
@@ -96,19 +105,16 @@ class Service {
       if (!result) {
         throw new NotFoundException('Unable to delete user. Id not found.');
       }
+      return result;
     } catch (error) {
       transformSequelizeException(error);
     }
   }
 
-  static async updateUser(id, username, password) {
+  static async updateUser(id, { username }) {
     const updateObject = {};
     if (username) {
       updateObject.username = username;
-    }
-    if (password) {
-      const newEncryptedPassword = await bcrypt.hash(password, 12);
-      updateObject.password = newEncryptedPassword;
     }
     try {
       const result = await User.update(
@@ -121,12 +127,7 @@ class Service {
       if (result[0] === 0) {
         throw new NotFoundException('Unable to edit user with the given id.');
       }
-      const user = await User.findOne({
-        attributes: { exclude: ['password'] },
-        where: { id },
-      });
-      const { dataValues: updatedUser } = user;
-      return updatedUser;
+      return result;
     } catch (error) {
       transformSequelizeException(error, 'Unable to edit user');
     }

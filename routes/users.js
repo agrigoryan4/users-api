@@ -53,7 +53,7 @@ router.post('/', async (req, res, next) => {
     if (error) {
       transformJoiException(error, 'Unable to create user');
     }
-    const newUser = await userCtrl.addUser(username, password);
+    const newUser = await userCtrl.addUser({ username, password });
     res.respData.data = newUser;
     res.status(201);
     next();
@@ -77,7 +77,7 @@ router.patch('/', auth, async (req, res, next) => {
     if (error) {
       transformJoiException(error, 'Unable to edit user');
     }
-    await userCtrl.editUser(id, { username });
+    const result = await userCtrl.editUser(id, { username });
     next();
   } catch (error) {
     next(error);
@@ -90,7 +90,7 @@ router.delete('/', auth, async (req, res, next) => {
       throw new BadRequestException();
     }
     if (req.user.id !== id) {
-      // throw new ForbiddenException();
+      throw new ForbiddenException();
     }
     const { error } = userValidation.validate({
       id,
