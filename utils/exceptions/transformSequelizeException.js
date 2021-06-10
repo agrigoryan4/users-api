@@ -9,7 +9,12 @@ const {
   ConflictException,
 } = require('./userFacingExceptions');
 
-const transformSequelizeException = (error, message) => {
+/**
+ * parses the sequelize exception and throws a userFacingException
+ * @param {Object} error
+ * @param {string} message
+ */
+function transformSequelizeException(error, message) {
   if (error instanceof ValidationError) {
     const errorMessage = `${message || 'Validation error'}: ${error.message || ''}`;
     throw new ValidationException(errorMessage);
@@ -24,6 +29,6 @@ const transformSequelizeException = (error, message) => {
     throw new ValidationException(message);
   }
   throw error;
-};
+}
 
 module.exports = transformSequelizeException;

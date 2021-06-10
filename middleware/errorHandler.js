@@ -1,6 +1,6 @@
 const { UserFacingException } = require('../utils/exceptions/userFacingExceptions');
 
-const errorHandler = (err, req, res, next) => {
+function errorHandler(err, req, res, next) {
   if (err instanceof UserFacingException) {
     return res.status(err.getStatusCode() || 500).json({
       error: {
@@ -12,6 +12,6 @@ const errorHandler = (err, req, res, next) => {
   }
   res.sendStatus(500);
   throw err;
-};
+}
 
 module.exports = errorHandler;

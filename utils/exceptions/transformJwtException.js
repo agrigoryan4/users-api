@@ -7,7 +7,12 @@ const {
   UnauthorizedException,
 } = require('./userFacingExceptions');
 
-const transformJwtException = (error, message) => {
+/**
+ * parses the exception thrown by jwt and throws a userFacingException
+ * @param {Object} error
+ * @param {string} message
+ */
+function transformJwtException(error, message) {
   if (error instanceof JsonWebTokenError) {
     throw new UnauthorizedException(message || 'Token validation error');
   }
@@ -18,6 +23,6 @@ const transformJwtException = (error, message) => {
     throw new UnauthorizedException(message || 'Token expired');
   }
   throw error;
-};
+}
 
 module.exports = transformJwtException;

@@ -2,7 +2,12 @@ const {
   ValidationException,
 } = require('./userFacingExceptions');
 
-const transformJoiException = (error, message) => {
+/**
+ * parses the exception thrown by joi and throws a userFacingException
+ * @param {Object} error
+ * @param {string} message
+ */
+function transformJoiException(error, message) {
   if (error.isJoi) {
     const joiMessages = error.details.map((detail) => detail.message);
     const errorMessage = `${(message || 'Validation error')}:  ${joiMessages.join('; ')}`;
@@ -10,6 +15,6 @@ const transformJoiException = (error, message) => {
   } else {
     throw error;
   }
-};
+}
 
 module.exports = transformJoiException;

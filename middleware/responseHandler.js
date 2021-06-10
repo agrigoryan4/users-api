@@ -1,12 +1,15 @@
-const responseHandler = (req, res, next) => {
+// constants
+const { DEFAULT_LIMIT, DEFAULT_OFFSET } = require('../utils/constants/pagination');
+
+function responseHandler(req, res, next) {
   const { data } = res.respData;
   const status = res.statusCode || 200;
-  let response = {
+  const response = {
     _meta: { },
     data: null,
   };
-  if(data?.count && !isNaN(data.count)) {
-    const { limit, offset } = req.query;
+  if (data.rows instanceof Array && data?.count && !isNaN(data.count)) {
+    const { limit = DEFAULT_LIMIT, offset = DEFAULT_OFFSET } = req.query;
     response.data = data.rows;
     response._meta.pagination = {
       total: data.count,
@@ -17,6 +20,6 @@ const responseHandler = (req, res, next) => {
     response.data = data;
   }
   return res.status(status).json(response);
-};
+}
 
 module.exports = responseHandler;

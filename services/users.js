@@ -1,24 +1,32 @@
-const bcrypt = require('bcrypt')
-const { sequelize } = require('../models');
+const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
 const { sequelize: { models: { User } } } = require('../models');
 // exceptions
 const transformSequelizeException = require('../utils/exceptions/transformSequelizeException');
 const {
   NotFoundException,
 } = require('../utils/exceptions/userFacingExceptions');
+// constants
+const { DEFAULT_LIMIT, DEFAULT_OFFSET } = require('../utils/constants/pagination');
 
 class Service {
+  /**
+   * creates a new user with the given data and saves in the database
+   * @param {Object} data
+   * @returns {Promise<Model<any, TModelAttributes>>}
+   */
   static async createUser({ username, password }) {
     const encryptedPassword = await bcrypt.hash(password, 12);
     const user = User.build({
       username,
       password: encryptedPassword,
     });
+    let newUser;
     try {
       await user.save({
         returning: false,
       });
-      const newUser = await User.findOne({
+      newUser = await User.findOne({
         where: {
           username,
         },
@@ -26,42 +34,44 @@ class Service {
           exclude: ['password'],
         },
       });
-      return newUser;
     } catch (error) {
       transformSequelizeException(error, 'Unable to create user');
     }
+    return newUser;
   }
 
-  static async getAllUsers({ limit, offset }, { username }) {
-    console.log(`
-    SELECT "id", "username", "createdAt", "updatedAt"
-      FROM "Users"
-      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
-      ORDER BY "username" ASC
-      ${ limit !== null && offset !== null ? (
-        `LIMIT ${limit} OFFSET ${offset}`
-    ) : '' }
-    `)
-    let [ users ] = await sequelize.query(`
-      SELECT "id", "username", "createdAt", "updatedAt"
-      FROM "Users"
-      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
-      ORDER BY "username" ASC
-      ${ limit !== null && offset !== null ? (
-          `LIMIT ${limit} OFFSET ${offset}`
-      ) : '' }
-    `);
-    let [ usersCount ] = await sequelize.query(`
-      SELECT COUNT("id")
-      FROM "Users"
-      ${ username ? `WHERE "username" LIKE '%${username}%'` : '' }
-    `);
+  /**
+   * returns all users from the database that satisfy the pagination and filter options provided
+   * @param {Object} pagination
+   * @param {Object} filter
+   * @returns {Promise<{count, rows: *}>}
+   */
+  static async getAllUsers({
+    limit = DEFAULT_LIMIT,
+    offset = DEFAULT_OFFSET,
+  }, { username }) {
+    const result = await User.findAndCountAll({
+      where: {
+        username: {
+          [Op.like]: `%${username}%`,
+        },
+      },
+      offset,
+      limit,
+    });
+    const { count, rows } = result;
     return {
-      rows: users,
-      count: usersCount[0].count
+      count,
+      rows,
     };
   }
 
+  /**
+   * returns the password of the given user provided an id or a username
+   * @param {string} id
+   * @param {string} username
+   * @returns {Promise<null|*>}
+   */
   static async getUserPassword(id, username) {
     const where = {};
     if (id) {
@@ -81,6 +91,11 @@ class Service {
     return hashedPassword;
   }
 
+  /**
+   * returns the user given its username
+   * @param {string} username
+   * @returns {Promise<Model<any, TModelAttributes>|null>}
+   */
   static async getUserByUsername(username) {
     const user = await User
       .findOne({
@@ -90,6 +105,11 @@ class Service {
     return user || null;
   }
 
+  /**
+   * returns the user given its id
+   * @param {string} id
+   * @returns {Promise<Model<any, TModelAttributes>|null>}
+   */
   static async getUserById(id) {
     const user = await User
       .findOne({
@@ -99,26 +119,36 @@ class Service {
     return user || null;
   }
 
+  /**
+   * deletes the user from the database given its id
+   * @param {string} id
+   * @returns {Promise<number>}
+   */
   static async deleteUserById(id) {
+    let result;
     try {
-      const result = await User.destroy({ where: { id } });
+      result = await User.destroy({ where: { id } });
       if (!result) {
         throw new NotFoundException('Unable to delete user. Id not found.');
       }
-      return result;
     } catch (error) {
       transformSequelizeException(error);
     }
+    return result;
   }
 
-  static async updateUser(id, { username }) {
-    const updateObject = {};
-    if (username) {
-      updateObject.username = username;
-    }
+  /**
+   * updates the user provided its id, and an update options object,
+   * where update attributes are specified
+   * @param {string} id
+   * @param {Object} updateOptions
+   * @returns {Promise<[number, Model[]]>}
+   */
+  static async updateUser(id, updateOptions) {
+    let result;
     try {
-      const result = await User.update(
-        updateObject,
+      result = await User.update(
+        updateOptions,
         {
           returning: false,
           where: { id },
@@ -127,10 +157,10 @@ class Service {
       if (result[0] === 0) {
         throw new NotFoundException('Unable to edit user with the given id.');
       }
-      return result;
     } catch (error) {
       transformSequelizeException(error, 'Unable to edit user');
     }
+    return result;
   }
 }
 

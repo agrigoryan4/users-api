@@ -1,6 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
-const { serverHost, serverPort } = require('./config').development;
+const { development: { serverHost, serverPort } } = require('./config');
 // db
 const { sequelize } = require('./models');
 // middleware
@@ -26,13 +26,13 @@ app.use('/users', usersRouter);
 app.use(responseHandler);
 app.use(errorHandler);
 
-const run = async () => {
+async function run() {
   app.listen(serverPort, serverHost, async () => {
     console.log(`Server listening on ${serverHost}:${serverPort}`);
     await sequelize.authenticate();
     await sequelize.sync();
     console.log('Connected to db');
   });
-};
+}
 
 run();

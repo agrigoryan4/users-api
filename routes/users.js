@@ -1,6 +1,14 @@
 const express = require('express');
+// middleware
 const auth = require('../middleware/auth');
+// controllers
 const { users: userCtrl } = require('../controllers');
+// helpers
+const extractExistingProperties = require('../utils/helpers/extractExistingProperties');
+const parseNumber = require('../utils/helpers/parseNumber');
+// constants
+const { DEFAULT_LIMIT, DEFAULT_OFFSET } = require('../utils/constants/pagination');
+// exceptions
 const userValidation = require('../utils/validation/userValidation');
 const transformJoiException = require('../utils/exceptions/transformJoiException');
 const {
@@ -30,7 +38,11 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 router.get('/', async (req, res, next) => {
-  const { limit = 10, offset = 0, username } = req.query;
+  let { limit, offset } = req.query;
+  const { username } = req.query;
+  limit = parseNumber(limit) !== null ? parseNumber(limit) : DEFAULT_LIMIT;
+  offset = parseNumber(offset) !== null ? parseNumber(offset) : DEFAULT_OFFSET;
+  req.query = { ...req.query, ...{ limit, offset } };
   try {
     const users = await userCtrl.getUsers({ pagination: { limit, offset }, filter: { username }});
     res.respData.data = users;
@@ -72,12 +84,13 @@ router.patch('/', auth, async (req, res, next) => {
     }
     const { error } = userValidation.validate({
       id,
-      username
+      username,
     });
     if (error) {
       transformJoiException(error, 'Unable to edit user');
     }
-    const result = await userCtrl.editUser(id, { username });
+    const updateOptions = extractExistingProperties(req.body, ['username']);
+    const result = await userCtrl.editUser(id, updateOptions);
     next();
   } catch (error) {
     next(error);
