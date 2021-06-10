@@ -8,7 +8,7 @@ async function responseHandler(req, res, next) {
     _meta: { },
     data: null,
   };
-  if (data.rows instanceof Array && data?.count && !isNaN(data.count)) {
+  if (data?.rows instanceof Array && data?.count >= 0 && !isNaN(data.count)) {
     const { limit = DEFAULT_LIMIT, offset = DEFAULT_OFFSET } = req.query;
     response.data = data.rows;
     response._meta.pagination = {
