@@ -1,7 +1,7 @@
 // constants
 const { DEFAULT_LIMIT, DEFAULT_OFFSET } = require('../utils/constants/pagination');
 
-function responseHandler(req, res, next) {
+async function responseHandler(req, res, next) {
   const { data } = res.respData;
   const status = res.statusCode || 200;
   const response = {

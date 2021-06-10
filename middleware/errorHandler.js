@@ -1,6 +1,6 @@
 const { UserFacingException } = require('../utils/exceptions/userFacingExceptions');
 
-function errorHandler(err, req, res, next) {
+async function errorHandler(err, req, res, next) {
   if (err instanceof UserFacingException) {
     return res.status(err.getStatusCode() || 500).json({
       error: {

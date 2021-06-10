@@ -5,7 +5,7 @@ const {
 } = require('../utils/exceptions/userFacingExceptions');
 const transformJwtException = require('../utils/exceptions/transformJwtException');
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
   const authHeader = req.header('Authorization');
   if (!authHeader) {
     return next(new UnauthorizedException('Authorization token missing'));
